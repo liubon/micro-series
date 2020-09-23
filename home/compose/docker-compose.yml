@@ -1,0 +1,50 @@
+version: '3'
+services: # 集合
+  docker_jenkins:
+    user: root # 为了避免一些权限问题 在这我使用了root
+    restart: always # 重启方式
+    image: jenkins/jenkins:lts # 指定服务所使用的镜像 在这里我选择了 LTS (长期支持)
+    container_name: jenkins # 容器名称
+    ports: # 对外暴露的端口定义
+      - 8080:8080
+      - 50000:50000
+    environment:
+      - 'TZ=Asia/Shanghai'
+    volumes: # 卷挂载路径
+      - /home/jenkins/jenkins_home/:/var/jenkins_home # 这是我们一开始创建的目录挂载到容器内的jenkins_home目录
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/webserver/static/:/home/webserver/static/
+      - /usr/bin/docker:/usr/bin/docker # 这是为了我们可以在容器内使用docker命令
+      - /usr/local/bin/docker-compose:/usr/local/bin/docker-compose
+  docker_nginx:
+    restart: always
+    image: nginx
+    container_name: nginx
+    ports:
+      - 8090:80
+      - 80:80
+      - 433:433
+    environment:
+      - 'TZ=Asia/Shanghai'
+    volumes:
+      - /home/nginx/conf.d:/etc/nginx/conf.d
+      - /home/nginx/cert:/etc/nginx/cert
+      - /home/nginx/log:/var/log/nginx
+      - /home/webserver/static:/usr/share/nginx
+  docker_mysql:
+    restart: always
+    image: mysql
+    container_name: mysql
+    ports:
+      - 3306:3306
+    command: --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+      --max_connections=1000
+    environment:
+      - 'MYSQL_ROOT_PASSWORD=yourpassword'
+      - 'TZ=Asia/Shanghai'
+    volumes:
+      - /home/mysql/db:/var/lib/mysql
+      - /home/mysql/log:/var/log/mysql
+      - /home/mysql/conf/my.cnf:/etc/my.cnf
